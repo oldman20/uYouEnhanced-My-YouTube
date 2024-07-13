@@ -141,15 +141,21 @@ static BOOL showNativeShareSheet(NSString *serializedShareEntity) {
     if (!shareUrl)
         return NO;
 
-    UIViewController *topViewController = [%c(YTUIUtils) topViewControllerForPresenting];
     UIActivityViewController *activityViewController = [[UIActivityViewController alloc] initWithActivityItems:@[shareUrl] applicationActivities:nil];
-    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone) {
-        [topViewController presentViewController:activityViewController animated:YES completion:^{}];
-    } else {
-        UIPopoverController *popoverController = [[UIPopoverController alloc] initWithContentViewController:activityViewController];
-        CGRect rect = CGRectMake(CGRectGetMidX(topViewController.view.bounds), CGRectGetMaxY(topViewController.view.bounds), 0, 0);
-        [popoverController presentPopoverFromRect:rect inView:topViewController.view permittedArrowDirections:UIPopoverArrowDirectionAny animated:YES];
+    activityViewController.excludedActivityTypes = @[UIActivityTypeAssignToContact, UIActivityTypePrint];
+
+    UIViewController *topViewController = [%c(YTUIUtils) topViewControllerForPresenting];
+
+    if (activityViewController.popoverPresentationController) {
+        activityViewController.popoverPresentationController.sourceView = topViewController.view;
+
+        CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+        CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
+
+        activityViewController.popoverPresentationController.sourceRect = CGRectMake(screenWidth / 2.0, screenHeight, 0, 0);
+        activityViewController.popoverPresentationController.permittedArrowDirections = UIPopoverArrowDirectionAny;
     }
+    [topViewController presentViewController:activityViewController animated:YES completion:nil];
     return YES;
 }
 
@@ -345,7 +351,6 @@ static void refreshUYouAppearance() {
 
     // Disable uYou's playback speed controls (prevent crash on video playback https://github.com/therealFoxster/uYouPlus/issues/2#issuecomment-1894912963)
     // [[NSUserDefaults standardUserDefaults] setBool:NO forKey:@"showPlaybackRate"];
-
     // Disable uYou's adblock
     [[NSUserDefaults standardUserDefaults] setBool:NO forKey:@"removeYouTubeAds"];
 }
